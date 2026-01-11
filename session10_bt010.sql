@@ -672,25 +672,48 @@ SELECT COUNT(*) AS total_notifications FROM notifications;
 
 
 
-create index idx_user_gender on users(gender);
+create index idx_user_name on users(username);
 
-create or replace view view_popular_posts as
+
+create or replace view view_user_activity_2 as
 select 
-    p.post_id, 
-    u.username, 
-    p.content, 
-    count( l.user_id) as like_count, 
-    count( c.comment_id) as comment_count
-from posts p
-join users u on p.user_id = u.user_id
-left join likes l on p.post_id = l.post_id
-left join comments c on p.post_id = c.post_id
-group by p.post_id, u.username, p.content;
+    u.user_id,
+    u.username,
+    u.full_name,
+
+   (select count(*) 
+     from posts p 
+     where p.user_id = u.user_id) as total_posts,
+
+    (select count(*) 
+     from friends f 
+     where f.user_id = u.user_id 
+       and f.status = 'accepted') as total_friends
+
+from users u;
 
 
-select * from view_popular_posts;
+select * from view_user_activity_2;
 
-select *, (like_count + comment_count) as total from view_popular_posts
-where like_count > 10 and comment_count > 10
- order by total desc
-;
+select 
+    username,
+    total_posts,
+    total_friends,
+
+    case 
+        when total_friends > 5 then 'Nhiều bạn'
+        when total_friends between 2 and 5 then 'Vừa đủ bạn bè'
+        when total_friends < 2 then 'Ít bạn bè'
+        else 'Chưa xác định'
+    end as friend_status,
+
+    case
+        when total_posts > 10 then total_posts * 1.1
+        when total_posts between 5 and 10 then total_posts
+        when total_posts < 5 then total_posts * 0.9
+        else total_posts
+    end as post_activity_score
+
+from view_user_activity_2
+where total_posts > 0
+order by total_posts desc;

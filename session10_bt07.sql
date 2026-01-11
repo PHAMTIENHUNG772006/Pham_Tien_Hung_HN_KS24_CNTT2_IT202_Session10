@@ -1,6 +1,6 @@
-drop database session10_bt08;
-create database session10_bt08;
-use session10_bt08;
+drop database session10_bt06;
+create database session10_bt06;
+use session10_bt06;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -672,25 +672,28 @@ SELECT COUNT(*) AS total_notifications FROM notifications;
 
 
 
-create index idx_user_gender on users(gender);
-
-create or replace view view_popular_posts as
+create or replace view view_user_activity_status as
 select 
-    p.post_id, 
-    u.username, 
-    p.content, 
-    count( l.user_id) as like_count, 
-    count( c.comment_id) as comment_count
-from posts p
-join users u on p.user_id = u.user_id
-left join likes l on p.post_id = l.post_id
-left join comments c on p.post_id = c.post_id
-group by p.post_id, u.username, p.content;
+    u.user_id,
+    u.username,
+    u.gender,
+    u.created_at,
+    case
+        when count(distinct p.post_id) + count(distinct c.comment_id) > 0 then 'active'
+        else 'inactive'
+    end as status
+from users u
+left join posts p on u.user_id = p.user_id
+left join comments c on u.user_id = c.user_id
+group by u.user_id, u.username, u.gender, u.created_at;
+
+select *
+from view_user_activity_status;
 
 
-select * from view_popular_posts;
+select status, count(*) as user_count
+from view_user_activity_status
+group by status
+order by user_count desc;
 
-select *, (like_count + comment_count) as total from view_popular_posts
-where like_count > 10 and comment_count > 10
- order by total desc
-;
+

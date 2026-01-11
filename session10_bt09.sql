@@ -1,6 +1,6 @@
-drop database session10_bt08;
-create database session10_bt08;
-use session10_bt08;
+drop database session10_bt09;
+create database session10_bt09;
+use session10_bt09;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -679,8 +679,8 @@ select
     p.post_id, 
     u.username, 
     p.content, 
-    sum(p.post_id) as total_posts , 
-    sum( c.comment_id) as total_comments 
+    count(p.post_id) as total_posts , 
+    count( c.comment_id) as total_comments 
 from posts p
 join users u on p.user_id = u.user_id
 inner join likes l on p.post_id = l.post_id
